@@ -518,7 +518,6 @@ class AiMagics(Magics):
         Handles `%ai version`. Returns the current version of
         `jupyter_ai_magics`.
         """
-        #return __version__
         return "mnagaku-work"
 
     def handle_list(self, args: ListArgs):
