@@ -348,6 +348,17 @@ class AiMagics(Magics):
 
             # Call litellm completion
             response = litellm.completion(**completion_args)
+            
+           # 履歴保存処理を追加してみる（ouji20251029）
+            from pathlib import Path
+            from datetime import datetime
+
+            history_file = Path.home() / ".jupyter_ai_history.txt"
+            with open(history_file, "a") as f:
+            f.write(f"[{datetime.now().isoformat()}] ({model_id})\n")
+            f.write(f"Prompt: {prompt}\n")
+            f.write(f"Response: {response[:200]}...\n\n")
+            ###ここまで
 
             # Extract output text from response
             output = response.choices[0].message.content
