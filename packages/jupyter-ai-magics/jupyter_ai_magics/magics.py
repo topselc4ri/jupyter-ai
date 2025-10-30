@@ -457,6 +457,7 @@ class AiMagics(Magics):
         Handles `%ai reset`. Clears the history.
         """
         self.transcript = []
+        print("finish to reset handle.")
 
     def handle_fix(self, args: FixArgs) -> Any:
         """
