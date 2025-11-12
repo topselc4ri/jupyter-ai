@@ -1,4 +1,5 @@
 import base64
+import datetime
 import json
 import os
 import re
@@ -518,7 +519,10 @@ class AiMagics(Magics):
         Handles `%ai version`. Returns the current version of
         `jupyter_ai_magics`.
         """
-        return "mnagaku-work"
+        path = __file__
+        mtime = os.path.getmtime(path)
+        dt = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+        return f"mnagaku-work based {__version__} (last modified: {dt})"
 
     def handle_list(self, args: ListArgs):
         """
