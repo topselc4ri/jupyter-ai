@@ -158,6 +158,17 @@ class AiMagics(Magics):
         config=True,
     )
 
+    # Test 20251113 Start
+    # %configからデフォルト値を設定できるようにする。
+    default_nb_path = traitlets.Unicode(
+        default_value=None,
+        allow_none=True,
+        help="""Set this notebook Path.
+        """,
+        config=True,
+    )
+    # # Test 20251113 End
+
     transcript: list[dict[str, str]]
     """
     The conversation history as a list of messages. Each message is a simple
@@ -391,6 +402,23 @@ class AiMagics(Magics):
         Handles the `%%ai` cell magic. This is the main method that invokes the
         language model.
         """
+
+        # Test 20251113 Start
+        # 以下実装により、%%ai --nb-path ~~~で受け取った値を、args.nb_pathから受け取ることができる。
+        # parserの@click.optionに--nb-pathというオプションを追加
+        # parserのCellArgsにnb_pathを追加
+
+        # %configからデフォルト値を設定できるようにする。
+        if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
+            args.nb_path = self.default_nb_path
+            
+        if getattr(args, "nb_path", None):
+            # 試しに受け取った内容を表示する
+            print(f"--nb-path={args.nb_path}", file=sys.stderr)
+            # print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
+            return
+        # Test 20251113 End
+        
         # Interpolate local variables into prompt.
         # For example, if a user runs `a = "hello"` and then runs `%%ai {a}`, it
         # should be equivalent to running `%%ai hello`.
@@ -614,7 +642,7 @@ class AiMagics(Magics):
         `jupyter_ai_magics`.
         """
         # return __version__
-        return "mtkhs-work"
+        return "mtkhs-work0.1.1"
 
     def handle_list(self, args: ListArgs):
         """
