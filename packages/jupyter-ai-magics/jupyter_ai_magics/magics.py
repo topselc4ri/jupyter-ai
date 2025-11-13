@@ -29,6 +29,10 @@ from .parsers import (
     line_magic_parser,
 )
 
+# Test 20251113 Start
+import nbformat as nbf
+# Test 20251113 End
+
 # Load the .env file from the workspace root
 dotenv_path = os.path.join(os.getcwd(), ".env")
 
@@ -302,100 +306,100 @@ class AiMagics(Magics):
 
         return self.run_ai_cell(args, prompt)
     
-    @line_cell_magic
-    def ai_custom(self, line: str, cell: Optional[str] = None) -> Any:
-        """
-        Defines how `%ai` and `%%ai` magic commands are handled. This is called
-        first whenever either `%ai` or `%%ai` is run, so it should be considered
-        the main method of the `AiMagics` class.
+    # @line_cell_magic
+    # def ai_custom(self, line: str, cell: Optional[str] = None) -> Any:
+    #     """
+    #     Defines how `%ai` and `%%ai` magic commands are handled. This is called
+    #     first whenever either `%ai` or `%%ai` is run, so it should be considered
+    #     the main method of the `AiMagics` class.
 
-        - `%ai` is a "line magic command" that only accepts a single line of
-        input. This is used to provide access to sub-commands like `%ai
-        alias`.
+    #     - `%ai` is a "line magic command" that only accepts a single line of
+    #     input. This is used to provide access to sub-commands like `%ai
+    #     alias`.
 
-        - `%%ai` is a "cell magic command" that accepts an entire cell of input
-        (i.e. multiple lines). This is used to invoke a language model.
+    #     - `%%ai` is a "cell magic command" that accepts an entire cell of input
+    #     (i.e. multiple lines). This is used to invoke a language model.
 
-        This method is called when either `%ai` or `%%ai` is run. Whether a line
-        or cell magic was run can be determined by the arguments given to this
-        method; `%%ai` was run if and only if `cell is not None`.
-        """
-        # Load .env file from workspace root, with override=True in case `.env` has been modified
-        # since the kernel started. This allows users to change API keys without restarting the kernel.
-        if os.path.isfile(dotenv_path):
-            load_dotenv(dotenv_path, override=True)
+    #     This method is called when either `%ai` or `%%ai` is run. Whether a line
+    #     or cell magic was run can be determined by the arguments given to this
+    #     method; `%%ai` was run if and only if `cell is not None`.
+    #     """
+    #     # Load .env file from workspace root, with override=True in case `.env` has been modified
+    #     # since the kernel started. This allows users to change API keys without restarting the kernel.
+    #     if os.path.isfile(dotenv_path):
+    #         load_dotenv(dotenv_path, override=True)
 
-        raw_args = line.split(" ")
-        default_map = {"model_id": self.initial_language_model}
+    #     raw_args = line.split(" ")
+    #     default_map = {"model_id": self.initial_language_model}
 
-        # parse arguments
-        args = None
-        try:
-            if cell:
-                args = cell_magic_parser(
-                    raw_args,
-                    prog_name=r"%%ai_custom",
-                    standalone_mode=False,
-                    default_map={"cell_magic_parser": default_map},
-                )
-            else:
-                args = line_magic_parser(
-                    raw_args,
-                    prog_name=r"%ai_custom",
-                    standalone_mode=False,
-                    default_map={"fix": default_map},
-                )
-        except Exception as e:
-            if "model_id" in str(e) and "string_type" in str(e):
-                error_msg = "No Model ID entered, please enter it in the following format: `%%ai_custom <model_id>`"
-                print(error_msg, file=sys.stderr)
-                return
-            if not args:
-                print(
-                    "No valid %ai_custom magics arguments given, run `%ai_custom help` for all options.",
-                    file=sys.stderr,
-                )
-                return
-            raise e
+    #     # parse arguments
+    #     args = None
+    #     try:
+    #         if cell:
+    #             args = cell_magic_parser(
+    #                 raw_args,
+    #                 prog_name=r"%%ai_custom",
+    #                 standalone_mode=False,
+    #                 default_map={"cell_magic_parser": default_map},
+    #             )
+    #         else:
+    #             args = line_magic_parser(
+    #                 raw_args,
+    #                 prog_name=r"%ai_custom",
+    #                 standalone_mode=False,
+    #                 default_map={"fix": default_map},
+    #             )
+    #     except Exception as e:
+    #         if "model_id" in str(e) and "string_type" in str(e):
+    #             error_msg = "No Model ID entered, please enter it in the following format: `%%ai_custom <model_id>`"
+    #             print(error_msg, file=sys.stderr)
+    #             return
+    #         if not args:
+    #             print(
+    #                 "No valid %ai_custom magics arguments given, run `%ai_custom help` for all options.",
+    #                 file=sys.stderr,
+    #             )
+    #             return
+    #         raise e
 
-        if args == 0 and self.initial_language_model is None:
-            # this happens when `--help` is called on the root command, in which
-            # case we want to exit early.
-            return
+    #     if args == 0 and self.initial_language_model is None:
+    #         # this happens when `--help` is called on the root command, in which
+    #         # case we want to exit early.
+    #         return
 
-        # If a value error occurs, don't print the full stacktrace
-        try:
-            if args.type == "fix":
-                return self.handle_fix(args)
-            if args.type == "help":
-                return self.handle_help(args)
-            if args.type == "list":
-                return self.handle_list(args)
-            if args.type == "alias":
-                return self.handle_alias(args)
-            if args.type == "dealias":
-                return self.handle_dealias(args)
-            if args.type == "version":
-                return self.handle_version(args)
-            if args.type == "reset":
-                return self.handle_reset(args)
-        except ValueError as e:
-            print(e, file=sys.stderr)
-            return
+    #     # If a value error occurs, don't print the full stacktrace
+    #     try:
+    #         if args.type == "fix":
+    #             return self.handle_fix(args)
+    #         if args.type == "help":
+    #             return self.handle_help(args)
+    #         if args.type == "list":
+    #             return self.handle_list(args)
+    #         if args.type == "alias":
+    #             return self.handle_alias(args)
+    #         if args.type == "dealias":
+    #             return self.handle_dealias(args)
+    #         if args.type == "version":
+    #             return self.handle_version(args)
+    #         if args.type == "reset":
+    #             return self.handle_reset(args)
+    #     except ValueError as e:
+    #         print(e, file=sys.stderr)
+    #         return
 
-        # hint to the IDE that this object must be of type `CellArgs`
-        args: CellArgs = args
+    #     # hint to the IDE that this object must be of type `CellArgs`
+    #     args: CellArgs = args
 
-        if not cell:
-            raise CellMagicError(
-                """To invoke a language model, you must use the `%%ai_custom`
-                cell magic. The `%ai_custom` line magic is only for use with
-                subcommands."""
-            )
+    #     if not cell:
+    #         raise CellMagicError(
+    #             """To invoke a language model, you must use the `%%ai_custom`
+    #             cell magic. The `%ai_custom` line magic is only for use with
+    #             subcommands."""
+    #         )
 
-        prompt = cell.strip()
+    #     prompt = cell.strip()
 
-        return self.run_ai_cell(args, prompt)
+    #     return self.run_ai_cell(args, prompt)
 
     def run_ai_cell(self, args: CellArgs, prompt: str):
         """
@@ -407,6 +411,14 @@ class AiMagics(Magics):
         # 以下実装により、%%ai --nb-path ~~~で受け取った値を、args.nb_pathから受け取ることができる。
         # parserの@click.optionに--nb-pathというオプションを追加
         # parserのCellArgsにnb_pathを追加
+        
+        # # Test 20251113 Start
+        # try:
+        #     import nbformat as nbf
+        # except ImportError:
+        #     print("Install nbformat: pip install nbformat", file=sys.stderr)
+        #     return
+        # # Test 20251113 End
 
         # %configからデフォルト値を設定できるようにする。
         if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
@@ -415,7 +427,12 @@ class AiMagics(Magics):
         if getattr(args, "nb_path", None):
             # 試しに受け取った内容を表示する
             print(f"--nb-path={args.nb_path}", file=sys.stderr)
-            # print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
+            print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
+            nb = self.list_cells(args.nb_path)
+            print(f"cell0= {nb[0]}", file=sys.stderr)
+            print(f"cell1= {nb[1]}", file=sys.stderr)
+            print(f"cell1= {nb[2]}", file=sys.stderr)
+            print(f"test end", file=sys.stderr)
             return
         # Test 20251113 End
         
@@ -488,6 +505,30 @@ class AiMagics(Magics):
             error_msg = f"Error calling language model: {str(e)}"
             print(error_msg, file=sys.stderr)
             return error_msg
+
+    # Test 20251113 Start
+    def load_nb(self, nb_path: str):
+        return nbf.read(nb_path, as_version=4)
+
+    def list_cells(self, nb_path: str):
+        nb = self.load_nb(nb_path)
+        cells = []
+        for i, c in enumerate(nb.cells):
+            cells.append({
+                "index": i,
+                "type": c["cell_type"],          # "code" or "markdown"
+                "source": c.get("source", ""),   # セル本文
+            })
+        return cells
+
+    def code_cells(self, nb_path: str):
+        nb = self.load_nb(nb_path)
+        return [c["source"] for c in nb.cells if c["cell_type"] == "code"]
+    
+    def markdown_cells(self, nb_path: str):
+        nb = self.load_nb(nb_path)
+        return [c["source"] for c in nb.cells if c["cell_type"] == "markdown"]
+    # Test 20251113 End
 
     def display_output(self, output, display_format, metadata: dict[str, Any]) -> Any:
         """
@@ -642,7 +683,7 @@ class AiMagics(Magics):
         `jupyter_ai_magics`.
         """
         # return __version__
-        return "mtkhs-work0.1.1"
+        return "mtkhs-work0.1.5"
 
     def handle_list(self, args: ListArgs):
         """
