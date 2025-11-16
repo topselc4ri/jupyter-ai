@@ -451,6 +451,7 @@ class AiMagics(Magics):
             print(f"参照ノートブックPath: {args.nb_path}")
             # print(f"ipn test: {ipn.path()}")
             messages.extend(self.cells_to_messages(args.nb_path))
+            messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
             
             # return
         # Test 20251116 End
@@ -547,11 +548,14 @@ class AiMagics(Magics):
             source = "".join(c.get("source", ""))
             if c["cell_type"] == "markdown":
                 content = {
+                    "cell_index": i,
                     "cell_type": c["cell_type"],
                     "source": source
                 }
             elif c["cell_type"] == "code":
                 content = {
+                    "cell_index": i,
+                    "execution_count": c.get("execution_count", ""),
                     "cell_type": c["cell_type"],
                     "source": source,
                     "outputs": c.get("outputs", "")
