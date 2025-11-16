@@ -29,9 +29,10 @@ from .parsers import (
     line_magic_parser,
 )
 
-# Test 20251113 Start
+# Test 20251116 Start
 import nbformat as nbf
-# Test 20251113 End
+# import ipynbname as ipn
+# Test 20251116 End
 
 # Load the .env file from the workspace root
 dotenv_path = os.path.join(os.getcwd(), ".env")
@@ -162,16 +163,17 @@ class AiMagics(Magics):
         config=True,
     )
 
-    # Test 20251113 Start
+    # Test 20251116 Start
     # %configからデフォルト値を設定できるようにする。
     default_nb_path = traitlets.Unicode(
+        # default_value=str(ipn.path()),
         default_value=None,
         allow_none=True,
         help="""Set this notebook Path.
         """,
         config=True,
     )
-    # # Test 20251113 End
+    # Test 20251116 End
 
     transcript: list[dict[str, str]]
     """
@@ -447,6 +449,7 @@ class AiMagics(Magics):
 
             # ノートブックを適当にパースしてmessagesに追加
             print(f"参照ノートブックPath: {args.nb_path}")
+            # print(f"ipn test: {ipn.path()}")
             messages.extend(self.cells_to_messages(args.nb_path))
             
             # return
