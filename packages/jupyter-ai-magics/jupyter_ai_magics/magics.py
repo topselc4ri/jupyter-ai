@@ -406,35 +406,6 @@ class AiMagics(Magics):
         Handles the `%%ai` cell magic. This is the main method that invokes the
         language model.
         """
-
-        # Test 20251113 Start
-        # 以下実装により、%%ai --nb-path ~~~で受け取った値を、args.nb_pathから受け取ることができる。
-        # parserの@click.optionに--nb-pathというオプションを追加
-        # parserのCellArgsにnb_pathを追加
-        
-        # # Test 20251113 Start
-        # try:
-        #     import nbformat as nbf
-        # except ImportError:
-        #     print("Install nbformat: pip install nbformat", file=sys.stderr)
-        #     return
-        # # Test 20251113 End
-
-        # %configからデフォルト値を設定できるようにする。
-        if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
-            args.nb_path = self.default_nb_path
-            
-        if getattr(args, "nb_path", None):
-            # 試しに受け取った内容を表示する
-            print(f"--nb-path={args.nb_path}", file=sys.stderr)
-            print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
-            nb = self.list_cells(args.nb_path)
-            print(f"cell0= {nb[0]}", file=sys.stderr)
-            print(f"cell1= {nb[1]}", file=sys.stderr)
-            print(f"cell1= {nb[2]}", file=sys.stderr)
-            print(f"test end", file=sys.stderr)
-            return
-        # Test 20251113 End
         
         # Interpolate local variables into prompt.
         # For example, if a user runs `a = "hello"` and then runs `%%ai {a}`, it
@@ -445,9 +416,42 @@ class AiMagics(Magics):
         # Prepare messages for the model
         messages = []
 
+        # Test 20251116 self.transcriptの取り込みをしないようにする
         # Add conversation history if available
-        if self.transcript:
-            messages.extend(self.transcript[-2 * self.max_history :])
+        # if self.transcript:
+        #     messages.extend(self.transcript[-2 * self.max_history :])
+
+        # Test 20251116 Start
+        # 以下実装により、%%ai --nb-path ~~~で受け取った値を、args.nb_pathから受け取ることができる。
+        # parserの@click.optionに--nb-pathというオプションを追加
+        # parserのCellArgsにnb_pathを追加
+
+        # %configからデフォルト値を設定できるようにする。
+        if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
+            args.nb_path = self.default_nb_path
+            
+        if getattr(args, "nb_path", None):
+            # 試しに受け取った内容を表示する
+            # print(f"--nb-path={args.nb_path}", file=sys.stderr)
+            # print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
+            # nb = self.list_cells(args.nb_path)
+            # print(f"cell0= {nb[0]}", file=sys.stderr)
+            # print(f"cell1= {nb[1]}", file=sys.stderr)
+            # print(f"cell2= {nb[2]}", file=sys.stderr)
+            
+            # self.transcriptの代わりに、取得したノートブックの内容をテキストとしてcontentにぶち込んでみる
+            # →入力が長すぎると怒られたため、ちゃんとパースしてあげる必要があるかもしれない。
+            # nb_text = self.load_nb_as_text(args.nb_path)
+            # messages.append({"role": "user", "content": nb_text})
+            # print(f"nb text head 100: {nb_text[0:100]}")
+
+            # ノートブックを適当にパースしてmessagesに追加
+            print(f"参照ノートブックPath: {args.nb_path}")
+            messages.extend(self.cells_to_messages(args.nb_path))
+            
+            # return
+        # Test 20251116 End
+        
 
         # Add current prompt
         messages.append({"role": "user", "content": prompt})
@@ -506,10 +510,20 @@ class AiMagics(Magics):
             print(error_msg, file=sys.stderr)
             return error_msg
 
-    # Test 20251113 Start
+    # Test 20251116 Start
+
+    # ファイルをjson形式のテキストとして取得する
+    def load_nb_as_text(self, nb_path: str):
+        f = open(nb_path, 'r')
+        nb_text = f.read()
+        f.close()
+        return nb_text
+
+    # ファイルをノートブックとして解釈して読み込む
     def load_nb(self, nb_path: str):
         return nbf.read(nb_path, as_version=4)
 
+    # 読み込んだノートブックをセルのリストの形に整形する
     def list_cells(self, nb_path: str):
         nb = self.load_nb(nb_path)
         cells = []
@@ -518,9 +532,38 @@ class AiMagics(Magics):
                 "index": i,
                 "type": c["cell_type"],          # "code" or "markdown"
                 "source": c.get("source", ""),   # セル本文
+                "output": c.get("outputs", "")   # 出力結果
             })
         return cells
 
+    # 読み込んだノートブックをmessage形式に整形する。
+    def cells_to_messages(self, nb_path: str):
+        nb = self.load_nb(nb_path)
+        messages = []
+        for i, c in enumerate(nb.cells):
+            source = "".join(c.get("source", ""))
+            if c["cell_type"] == "markdown":
+                content = {
+                    "cell_type": c["cell_type"],
+                    "source": source
+                }
+            elif c["cell_type"] == "code":
+                content = {
+                    "cell_type": c["cell_type"],
+                    "source": source,
+                    "outputs": c.get("outputs", "")
+                }
+            else:
+                continue
+
+            content = json.dumps(content)
+            messages.append({
+                "role": "user",
+                "content": content,
+            })
+        return messages
+
+    # いらないかも
     def code_cells(self, nb_path: str):
         nb = self.load_nb(nb_path)
         return [c["source"] for c in nb.cells if c["cell_type"] == "code"]
@@ -528,7 +571,7 @@ class AiMagics(Magics):
     def markdown_cells(self, nb_path: str):
         nb = self.load_nb(nb_path)
         return [c["source"] for c in nb.cells if c["cell_type"] == "markdown"]
-    # Test 20251113 End
+    # Test 20251116 End
 
     def display_output(self, output, display_format, metadata: dict[str, Any]) -> Any:
         """
@@ -683,7 +726,7 @@ class AiMagics(Magics):
         `jupyter_ai_magics`.
         """
         # return __version__
-        return "mtkhs-work0.1.5"
+        return "mtkhs-work0.1.6"
 
     def handle_list(self, args: ListArgs):
         """
