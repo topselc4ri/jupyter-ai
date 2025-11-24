@@ -308,101 +308,6 @@ class AiMagics(Magics):
 
         return self.run_ai_cell(args, prompt)
     
-    # @line_cell_magic
-    # def ai_custom(self, line: str, cell: Optional[str] = None) -> Any:
-    #     """
-    #     Defines how `%ai` and `%%ai` magic commands are handled. This is called
-    #     first whenever either `%ai` or `%%ai` is run, so it should be considered
-    #     the main method of the `AiMagics` class.
-
-    #     - `%ai` is a "line magic command" that only accepts a single line of
-    #     input. This is used to provide access to sub-commands like `%ai
-    #     alias`.
-
-    #     - `%%ai` is a "cell magic command" that accepts an entire cell of input
-    #     (i.e. multiple lines). This is used to invoke a language model.
-
-    #     This method is called when either `%ai` or `%%ai` is run. Whether a line
-    #     or cell magic was run can be determined by the arguments given to this
-    #     method; `%%ai` was run if and only if `cell is not None`.
-    #     """
-    #     # Load .env file from workspace root, with override=True in case `.env` has been modified
-    #     # since the kernel started. This allows users to change API keys without restarting the kernel.
-    #     if os.path.isfile(dotenv_path):
-    #         load_dotenv(dotenv_path, override=True)
-
-    #     raw_args = line.split(" ")
-    #     default_map = {"model_id": self.initial_language_model}
-
-    #     # parse arguments
-    #     args = None
-    #     try:
-    #         if cell:
-    #             args = cell_magic_parser(
-    #                 raw_args,
-    #                 prog_name=r"%%ai_custom",
-    #                 standalone_mode=False,
-    #                 default_map={"cell_magic_parser": default_map},
-    #             )
-    #         else:
-    #             args = line_magic_parser(
-    #                 raw_args,
-    #                 prog_name=r"%ai_custom",
-    #                 standalone_mode=False,
-    #                 default_map={"fix": default_map},
-    #             )
-    #     except Exception as e:
-    #         if "model_id" in str(e) and "string_type" in str(e):
-    #             error_msg = "No Model ID entered, please enter it in the following format: `%%ai_custom <model_id>`"
-    #             print(error_msg, file=sys.stderr)
-    #             return
-    #         if not args:
-    #             print(
-    #                 "No valid %ai_custom magics arguments given, run `%ai_custom help` for all options.",
-    #                 file=sys.stderr,
-    #             )
-    #             return
-    #         raise e
-
-    #     if args == 0 and self.initial_language_model is None:
-    #         # this happens when `--help` is called on the root command, in which
-    #         # case we want to exit early.
-    #         return
-
-    #     # If a value error occurs, don't print the full stacktrace
-    #     try:
-    #         if args.type == "fix":
-    #             return self.handle_fix(args)
-    #         if args.type == "help":
-    #             return self.handle_help(args)
-    #         if args.type == "list":
-    #             return self.handle_list(args)
-    #         if args.type == "alias":
-    #             return self.handle_alias(args)
-    #         if args.type == "dealias":
-    #             return self.handle_dealias(args)
-    #         if args.type == "version":
-    #             return self.handle_version(args)
-    #         if args.type == "reset":
-    #             return self.handle_reset(args)
-    #     except ValueError as e:
-    #         print(e, file=sys.stderr)
-    #         return
-
-    #     # hint to the IDE that this object must be of type `CellArgs`
-    #     args: CellArgs = args
-
-    #     if not cell:
-    #         raise CellMagicError(
-    #             """To invoke a language model, you must use the `%%ai_custom`
-    #             cell magic. The `%ai_custom` line magic is only for use with
-    #             subcommands."""
-    #         )
-
-    #     prompt = cell.strip()
-
-    #     return self.run_ai_cell(args, prompt)
-
     def run_ai_cell(self, args: CellArgs, prompt: str):
         """
         Handles the `%%ai` cell magic. This is the main method that invokes the
@@ -429,34 +334,40 @@ class AiMagics(Magics):
         # parserのCellArgsにnb_pathを追加
 
         # %configからデフォルト値を設定できるようにする。
-        if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
-            args.nb_path = self.default_nb_path
+        # if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
+        #     args.nb_path = self.default_nb_path
             
-        if getattr(args, "nb_path", None):
-            # 試しに受け取った内容を表示する
-            # print(f"--nb-path={args.nb_path}", file=sys.stderr)
-            # print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
-            # nb = self.list_cells(args.nb_path)
-            # print(f"cell0= {nb[0]}", file=sys.stderr)
-            # print(f"cell1= {nb[1]}", file=sys.stderr)
-            # print(f"cell2= {nb[2]}", file=sys.stderr)
+        # if getattr(args, "nb_path", None):
+        #     # 試しに受け取った内容を表示する
+        #     # print(f"--nb-path={args.nb_path}", file=sys.stderr)
+        #     # print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
+        #     # nb = self.list_cells(args.nb_path)
+        #     # print(f"cell0= {nb[0]}", file=sys.stderr)
+        #     # print(f"cell1= {nb[1]}", file=sys.stderr)
+        #     # print(f"cell2= {nb[2]}", file=sys.stderr)
             
-            # self.transcriptの代わりに、取得したノートブックの内容をテキストとしてcontentにぶち込んでみる
-            # →入力が長すぎると怒られたため、ちゃんとパースしてあげる必要があるかもしれない。
-            # nb_text = self.load_nb_as_text(args.nb_path)
-            # messages.append({"role": "user", "content": nb_text})
-            # print(f"nb text head 100: {nb_text[0:100]}")
+        #     # self.transcriptの代わりに、取得したノートブックの内容をテキストとしてcontentにぶち込んでみる
+        #     # →入力が長すぎると怒られたため、ちゃんとパースしてあげる必要があるかもしれない。
+        #     # nb_text = self.load_nb_as_text(args.nb_path)
+        #     # messages.append({"role": "user", "content": nb_text})
+        #     # print(f"nb text head 100: {nb_text[0:100]}")
 
-            # ノートブックを適当にパースしてmessagesに追加
-            print(f"参照ノートブックPath: {args.nb_path}")
-            # print(f"ipn test: {ipn.path()}")
-            messages.extend(self.cells_to_messages(args.nb_path))
-            messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
+        #     # ノートブックを適当にパースしてmessagesに追加
+        #     print(f"参照ノートブックPath: {args.nb_path}")
+        #     # print(f"ipn test: {ipn.path()}")
+        #     nb = self.load_nb(args.nb_path)
+        #     messages.extend(self.cells_to_messages(args.nb_path))
+        #     messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
             
             # return
         # Test 20251116 End
-        
 
+        # フロント拡張からノートブックの内容を受け取ってLLMに渡す。
+        prefix_raw = ns.get("__AI_NOTEBOOK_PREFIX__")
+        if prefix_raw is not None:
+            messages.extend(self.cells_to_messages(prefix_raw))
+            messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
+        
         # Add current prompt
         messages.append({"role": "user", "content": prompt})
 
@@ -541,8 +452,7 @@ class AiMagics(Magics):
         return cells
 
     # 読み込んだノートブックをmessage形式に整形する。
-    def cells_to_messages(self, nb_path: str):
-        nb = self.load_nb(nb_path)
+    def cells_to_messages(self, nb):
         messages = []
         for i, c in enumerate(nb.cells):
             source = "".join(c.get("source", ""))
@@ -733,7 +643,7 @@ class AiMagics(Magics):
         `jupyter_ai_magics`.
         """
         # return __version__
-        return "mtkhs-work0.1.6"
+        return "mtkhs-work0.2.0"
 
     def handle_list(self, args: ListArgs):
         """
