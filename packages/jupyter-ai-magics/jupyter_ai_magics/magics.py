@@ -364,9 +364,11 @@ class AiMagics(Magics):
 
         # フロント拡張からノートブックの内容を受け取ってLLMに渡す。
         prefix_raw = ip.user_ns.get("__AI_NOTEBOOK_PREFIX__")
-        print(f"prefix_raw: {prefix_raw}")
+        # print(f"prefix_raw: {prefix_raw}")
         if prefix_raw is not None:
-            messages.extend(self.cells_to_messages(prefix_raw))
+            # nb = nbf.from_dict(json.loads(prefix_raw))
+            nb = nbf.reads(prefix_raw, as_version=4)
+            messages.extend(self.cells_to_messages(nb))
             messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
         
         # Add current prompt
