@@ -163,18 +163,6 @@ class AiMagics(Magics):
         config=True,
     )
 
-    # Test 20251116 Start
-    # %configからデフォルト値を設定できるようにする。
-    default_nb_path = traitlets.Unicode(
-        # default_value=str(ipn.path()),
-        default_value=None,
-        allow_none=True,
-        help="""Set this notebook Path.
-        """,
-        config=True,
-    )
-    # Test 20251116 End
-
     transcript: list[dict[str, str]]
     """
     The conversation history as a list of messages. Each message is a simple
@@ -366,10 +354,20 @@ class AiMagics(Magics):
         prefix_raw = ip.user_ns.get("__AI_NOTEBOOK_PREFIX__")
         # print(f"prefix_raw: {prefix_raw}")
         if prefix_raw is not None:
-            # nb = nbf.from_dict(json.loads(prefix_raw))
             nb = nbf.reads(prefix_raw, as_version=4)
             messages.extend(self.cells_to_messages(nb))
             messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
+
+        # 外部ファイル読み込みしてみる。
+        if getattr(args, "option_file", None):
+            print(f"--option-file={args.option_file}")
+            file_path = args.option_file
+            f = open(file_path, 'r')
+            file_str = f.read()
+            f.close()
+            messages.append({"role": "user", "content": "以下に、回答の前提として欲しいファイルのパスと内容を示します。"})
+            messages.append({"role": "user", "content": f"option file path: {file_path}"})
+            messages.append({"role": "user", "content": file_str})
         
         # Add current prompt
         messages.append({"role": "user", "content": prompt})
