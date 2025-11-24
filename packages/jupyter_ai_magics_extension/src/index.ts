@@ -8,22 +8,43 @@ import {
   NotebookPanel
 } from '@jupyterlab/notebook';
 
-import { nbformat } from '@jupyterlab/coreutils';
+import * as nbformat from '@jupyterlab/nbformat';
 
 function notebookPrefixToJSON(panel: NotebookPanel, uptoIndex: number): nbformat.INotebookContent {
-  const model = panel.model!;
-  const cells: nbformat.ICell[] = [];
+  // const model = panel.model!;
+  // const cells: nbformat.ICell[] = [];
 
-  for (let i = 0; i <= uptoIndex && i < model.cells.length; i++) {
-    const cellModel = model.cells.get(i)!;
-    cells.push(cellModel.toJSON() as nbformat.ICell);
+  // for (let i = 0; i <= uptoIndex && i < model.cells.length; i++) {
+  //   const cellModel = model.cells.get(i)!;
+  //   cells.push(cellModel.toJSON() as nbformat.ICell);
+  // }
+
+  // return {
+  //   cells,
+  //   metadata: model.metadata.toJSON(),
+  //   nbformat: 4,
+  //   nbformat_minor: 5
+  // };
+
+  // Notebook 全体の JSON を取る（null の可能性がある扱いなので union 型にしておく）
+  const full = panel.context.model.toJSON() as nbformat.INotebookContent | null;
+
+  // 念のため null の場合のフォールバック
+  if (!full) {
+    return {
+      cells: [],
+      metadata: {},
+      nbformat: 4,
+      nbformat_minor: 5
+    };
   }
 
+  const max = Math.min(uptoIndex + 1, full.cells.length);
+
+  // オブジェクトを書き換えず、コピーを返す方が型的にも安全
   return {
-    cells,
-    metadata: model.metadata.toJSON(),
-    nbformat: 4,
-    nbformat_minor: 5
+    ...full,
+    cells: full.cells.slice(0, max)
   };
 }
 
@@ -50,7 +71,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
         const notebook = current.content;
         const index = notebook.activeCellIndex;
         const cellWidget = notebook.widgets[index];
-        const src = cellWidget.model.value.text;
+        const src = cellWidget.model.sharedModel.getSource();
 
         // 先頭が %%ai でなければ通常実行
         if (!src.trimStart().startsWith('%%ai')) {
@@ -66,8 +87,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
         const session = current.sessionContext.session;
         if (session?.kernel) {
           await session.kernel.requestExecute({
-            code: "__AI_NOTEBOOK_PREFIX__ = " + JSON.stringify(jsonStr)
-          }, { silent: true }).done;
+            code: "__AI_NOTEBOOK_PREFIX__ = " + JSON.stringify(jsonStr),
+            silent: true
+          }).done;
         }
 
         // 2. 本来のセル実行

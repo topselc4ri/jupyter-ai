@@ -1,4 +1,4 @@
-# jupyter-ai-magics-extension
+# jupyter_ai_magics_extension
 
 [![Github Actions Status](https://github.com/github_username/jupyter-ai-magics-extension/workflows/Build/badge.svg)](https://github.com/github_username/jupyter-ai-magics-extension/actions/workflows/build.yml)
 A JupyterLab extension.
@@ -12,7 +12,7 @@ A JupyterLab extension.
 To install the extension, execute:
 
 ```bash
-pip install jupyter-ai-magics-extension
+pip install jupyter_ai_magics_extension
 ```
 
 ## Uninstall
@@ -20,7 +20,7 @@ pip install jupyter-ai-magics-extension
 To remove the extension, execute:
 
 ```bash
-pip uninstall jupyter-ai-magics-extension
+pip uninstall jupyter_ai_magics_extension
 ```
 
 ## Contributing
@@ -35,7 +35,7 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Change directory to the jupyter-ai-magics-extension directory
+# Change directory to the jupyter_ai_magics_extension directory
 # Install package in development mode
 pip install -e "."
 # Link your development version of the extension with JupyterLab
@@ -64,7 +64,7 @@ jupyter lab build --minimize=False
 ### Development uninstall
 
 ```bash
-pip uninstall jupyter-ai-magics-extension
+pip uninstall jupyter_ai_magics_extension
 ```
 
 In development mode, you will also need to remove the symlink created by `jupyter labextension develop`

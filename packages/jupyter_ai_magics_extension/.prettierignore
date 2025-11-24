@@ -3,4 +3,4 @@ node_modules
 **/lib
 **/package.json
 !/package.json
-jupyter-ai-magics-extension
+jupyter_ai_magics_extension

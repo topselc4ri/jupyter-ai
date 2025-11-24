@@ -3,7 +3,7 @@ requires = ["hatchling>=1.5.0", "jupyterlab>=4.0.0,<5", "hatch-nodejs-version"]
 build-backend = "hatchling.build"
 
 [project]
-name = "jupyter-ai-magics-extension"
+name = "jupyter_ai_magics_extension"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.8"
@@ -32,24 +32,24 @@ source = "nodejs"
 fields = ["description", "authors", "urls"]
 
 [tool.hatch.build.targets.sdist]
-artifacts = ["jupyter-ai-magics-extension/labextension"]
+artifacts = ["jupyter_ai_magics_extension/labextension"]
 exclude = [".github", "binder"]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"jupyter-ai-magics-extension/labextension" = "share/jupyter/labextensions/jupyter-ai-magics-extension"
+"jupyter_ai_magics_extension/labextension" = "share/jupyter/labextensions/jupyter-ai-magics-extension"
 "install.json" = "share/jupyter/labextensions/jupyter-ai-magics-extension/install.json"
 
 [tool.hatch.build.hooks.version]
-path = "jupyter-ai-magics-extension/_version.py"
+path = "jupyter_ai_magics_extension/_version.py"
 
 [tool.hatch.build.hooks.jupyter-builder]
 dependencies = ["hatch-jupyter-builder>=0.5"]
 build-function = "hatch_jupyter_builder.npm_builder"
 ensured-targets = [
-    "jupyter-ai-magics-extension/labextension/static/style.js",
-    "jupyter-ai-magics-extension/labextension/package.json",
+    "jupyter_ai_magics_extension/labextension/static/style.js",
+    "jupyter_ai_magics_extension/labextension/package.json",
 ]
-skip-if-exists = ["jupyter-ai-magics-extension/labextension/static/style.js"]
+skip-if-exists = ["jupyter_ai_magics_extension/labextension/static/style.js"]
 
 [tool.hatch.build.hooks.jupyter-builder.build-kwargs]
 build_cmd = "build:prod"
@@ -59,7 +59,7 @@ npm = ["jlpm"]
 build_cmd = "install:extension"
 npm = ["jlpm"]
 source_dir = "src"
-build_dir = "jupyter-ai-magics-extension/labextension"
+build_dir = "jupyter_ai_magics_extension/labextension"
 
 [tool.jupyter-releaser.options]
 version_cmd = "hatch version"
