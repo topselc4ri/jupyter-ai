@@ -47,6 +47,7 @@ class CellArgs(BaseModel):
     model_id: str
     format: FORMAT_CHOICES_TYPE
     model_parameters: Optional[str] = None
+    error_handle: bool = False
     # The following parameters are required only for SageMaker models
     region_name: Optional[str] = None
     request_schema: Optional[str] = None
@@ -58,7 +59,6 @@ class CellArgs(BaseModel):
     # nb_path: Optional[str] = None
     # # Test20251113 end
     option_file: Optional[str] = None
-
 
 # Should match CellArgs
 class FixArgs(BaseModel):
@@ -184,7 +184,6 @@ def verify_json_value(ctx, param, value):
     callback=verify_json_value,
     default="{}",
 )
-
 # # Test 20251113 Start
 # @click.option(
 #     "--nb-path",
@@ -200,6 +199,14 @@ def verify_json_value(ctx, param, value):
     help="Path to a file to include as context in the prompt.",
 )
 
+@click.option(
+    "--error-handle",
+    "--errorhandle",
+    "error_handle",
+    is_flag=True,
+    default=False,
+    help="Execute the cell normally and call the language model only when an error occurs.",
+)
 @click.pass_context
 def cell_magic_parser(context: click.Context, **kwargs):
     """
