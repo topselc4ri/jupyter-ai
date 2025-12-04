@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import warnings
-import traceback
 from typing import Any, Optional
 
 import click
@@ -29,11 +28,6 @@ from .parsers import (
     cell_magic_parser,
     line_magic_parser,
 )
-
-# Test 20251116 Start
-import nbformat as nbf
-# import ipynbname as ipn
-# Test 20251116 End
 
 # Load the .env file from the workspace root
 dotenv_path = os.path.join(os.getcwd(), ".env")
@@ -293,20 +287,15 @@ class AiMagics(Magics):
                 subcommands."""
             )
 
-        # エラーハンドルモードではセルを通常実行し、失敗時のみLLMへ情報を渡す
-        if args.error_handle:
-            return self.run_cell_with_error_handle(args, cell)
-
         prompt = cell.strip()
 
         return self.run_ai_cell(args, prompt)
-    
+
     def run_ai_cell(self, args: CellArgs, prompt: str):
         """
         Handles the `%%ai` cell magic. This is the main method that invokes the
         language model.
         """
-        
         # Interpolate local variables into prompt.
         # For example, if a user runs `a = "hello"` and then runs `%%ai {a}`, it
         # should be equivalent to running `%%ai hello`.
@@ -316,64 +305,10 @@ class AiMagics(Magics):
         # Prepare messages for the model
         messages = []
 
-        # Test 20251116 self.transcriptの取り込みをしないようにする
         # Add conversation history if available
-        # if self.transcript:
-        #     messages.extend(self.transcript[-2 * self.max_history :])
+        if self.transcript:
+            messages.extend(self.transcript[-2 * self.max_history :])
 
-        # Test 20251116 Start
-        # 以下実装により、%%ai --nb-path ~~~で受け取った値を、args.nb_pathから受け取ることができる。
-        # parserの@click.optionに--nb-pathというオプションを追加
-        # parserのCellArgsにnb_pathを追加
-
-        # %configからデフォルト値を設定できるようにする。
-        # if hasattr(args, "nb_path") and args.nb_path is None and self.default_nb_path:
-        #     args.nb_path = self.default_nb_path
-            
-        # if getattr(args, "nb_path", None):
-        #     # 試しに受け取った内容を表示する
-        #     # print(f"--nb-path={args.nb_path}", file=sys.stderr)
-        #     # print(f"default_nb_path={self.default_nb_path}", file=sys.stderr)
-        #     # nb = self.list_cells(args.nb_path)
-        #     # print(f"cell0= {nb[0]}", file=sys.stderr)
-        #     # print(f"cell1= {nb[1]}", file=sys.stderr)
-        #     # print(f"cell2= {nb[2]}", file=sys.stderr)
-            
-        #     # self.transcriptの代わりに、取得したノートブックの内容をテキストとしてcontentにぶち込んでみる
-        #     # →入力が長すぎると怒られたため、ちゃんとパースしてあげる必要があるかもしれない。
-        #     # nb_text = self.load_nb_as_text(args.nb_path)
-        #     # messages.append({"role": "user", "content": nb_text})
-        #     # print(f"nb text head 100: {nb_text[0:100]}")
-
-        #     # ノートブックを適当にパースしてmessagesに追加
-        #     print(f"参照ノートブックPath: {args.nb_path}")
-        #     # print(f"ipn test: {ipn.path()}")
-        #     nb = self.load_nb(args.nb_path)
-        #     messages.extend(self.cells_to_messages(args.nb_path))
-        #     messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
-            
-            # return
-        # Test 20251116 End
-
-        # フロント拡張からノートブックの内容を受け取ってLLMに渡す。
-        prefix_raw = ip.user_ns.get("__AI_NOTEBOOK_PREFIX__")
-        # print(f"prefix_raw: {prefix_raw}")
-        if prefix_raw is not None:
-            nb = nbf.reads(prefix_raw, as_version=4)
-            messages.extend(self.cells_to_messages(nb))
-            messages.append({"role": "user", "content": "上記は、読み込んだノートブックのセルを羅列したリストです。セルの配置順をcell_indexに、コードセルの実行順をexecution_countに格納しています。この情報を前提に以降の質問に回答してください。"})
-
-        # 外部ファイル読み込みしてみる。
-        if getattr(args, "option_file", None):
-            print(f"--option-file={args.option_file}")
-            file_path = args.option_file
-            f = open(file_path, 'r')
-            file_str = f.read()
-            f.close()
-            messages.append({"role": "user", "content": "以下に、回答の前提として欲しいファイルのパスと内容を示します。"})
-            messages.append({"role": "user", "content": f"option file path: {file_path}"})
-            messages.append({"role": "user", "content": file_str})
-        
         # Add current prompt
         messages.append({"role": "user", "content": prompt})
 
@@ -430,137 +365,6 @@ class AiMagics(Magics):
             error_msg = f"Error calling language model: {str(e)}"
             print(error_msg, file=sys.stderr)
             return error_msg
-
-<<<<<<< HEAD
-    def run_cell_with_error_handle(self, args: CellArgs, cell: str):
-        # セルを通常通り実行し、例外発生時のみLLMに説明を依頼する
-        ip = self.shell
-        try:
-            exec_result = ip.run_cell(cell)
-        except BaseException as exc:
-            traceback_text = "".join(
-                traceback.TracebackException.from_exception(exc).format()
-            )
-            return self._handle_cell_error(args, cell, traceback_text)
-
-        if not exec_result or getattr(exec_result, "success", True):
-            return
-
-        error_exc = getattr(exec_result, "error_in_exec", None) or getattr(
-            exec_result, "error_before_exec", None
-        )
-        if not error_exc:
-            return
-
-        traceback_text = "".join(
-            traceback.TracebackException.from_exception(error_exc).format()
-        )
-        return self._handle_cell_error(args, cell, traceback_text)
-
-    def _handle_cell_error(self, args: CellArgs, cell: str, traceback_text: str):
-        # 実行したコードとトレースバックをテンプレートへ埋め込んでLLMへ送る
-        if not traceback_text:
-            return
-
-        template = self._get_error_help_prompt()
-        prompt = template.format(code=cell.strip(), error=traceback_text.strip())
-        safe_prompt = prompt.replace("{", "{{").replace("}", "}}")
-
-        values = args.model_dump()
-        values["error_handle"] = False
-        helper_args = CellArgs(**values)
-
-        print(
-            "An error was detected while executing the cell. Asking the AI assistant for help."
-        )
-        return self.run_ai_cell(helper_args, safe_prompt)
-
-    def _get_error_help_prompt(self) -> str:
-        """
-        Returns the prompt template for error handling, preferring an external file if present.
-        """
-        candidate_path = self.error_help_prompt_path or os.path.join(
-            os.getcwd(), "errorhandle_prompt.cfg"
-        )
-
-        if candidate_path and os.path.isfile(candidate_path):
-            try:
-                with open(candidate_path, "r", encoding="utf-8") as f:
-                    return f.read()
-            except OSError as exc:
-                print(
-                    f"Failed to read error prompt file at {candidate_path}: {exc}",
-                    file=sys.stderr,
-                )
-
-        # フォールバックは組み込みのデフォルト（日本語）
-        return self.error_help_prompt
-=======
-    # Test 20251116 Start
-
-    # ファイルをjson形式のテキストとして取得する
-    def load_nb_as_text(self, nb_path: str):
-        f = open(nb_path, 'r')
-        nb_text = f.read()
-        f.close()
-        return nb_text
-
-    # ファイルをノートブックとして解釈して読み込む
-    def load_nb(self, nb_path: str):
-        return nbf.read(nb_path, as_version=4)
-
-    # 読み込んだノートブックをセルのリストの形に整形する
-    def list_cells(self, nb_path: str):
-        nb = self.load_nb(nb_path)
-        cells = []
-        for i, c in enumerate(nb.cells):
-            cells.append({
-                "index": i,
-                "type": c["cell_type"],          # "code" or "markdown"
-                "source": c.get("source", ""),   # セル本文
-                "output": c.get("outputs", "")   # 出力結果
-            })
-        return cells
-
-    # 読み込んだノートブックをmessage形式に整形する。
-    def cells_to_messages(self, nb):
-        messages = []
-        for i, c in enumerate(nb.cells):
-            source = "".join(c.get("source", ""))
-            if c["cell_type"] == "markdown":
-                content = {
-                    "cell_index": i,
-                    "cell_type": c["cell_type"],
-                    "source": source
-                }
-            elif c["cell_type"] == "code":
-                content = {
-                    "cell_index": i,
-                    "execution_count": c.get("execution_count", ""),
-                    "cell_type": c["cell_type"],
-                    "source": source,
-                    "outputs": c.get("outputs", "")
-                }
-            else:
-                continue
-
-            content = json.dumps(content)
-            messages.append({
-                "role": "user",
-                "content": content,
-            })
-        return messages
-
-    # いらないかも
-    def code_cells(self, nb_path: str):
-        nb = self.load_nb(nb_path)
-        return [c["source"] for c in nb.cells if c["cell_type"] == "code"]
-    
-    def markdown_cells(self, nb_path: str):
-        nb = self.load_nb(nb_path)
-        return [c["source"] for c in nb.cells if c["cell_type"] == "markdown"]
-    # Test 20251116 End
->>>>>>> 7584eef20b5312e3902057381474686ebf864f7b
 
     def display_output(self, output, display_format, metadata: dict[str, Any]) -> Any:
         """
@@ -714,14 +518,7 @@ class AiMagics(Magics):
         Handles `%ai version`. Returns the current version of
         `jupyter_ai_magics`.
         """
-<<<<<<< HEAD
-        #return __version__
-        return "toru-work"
-
-=======
-        # return __version__
-        return "mtkhs-work0.2.0"
->>>>>>> 7584eef20b5312e3902057381474686ebf864f7b
+        return __version__
 
     def handle_list(self, args: ListArgs):
         """
@@ -825,32 +622,4 @@ class AiMagics(Magics):
                                 f"  - api_key_name: `{config['api_key_name']}`\n"
                             )
 
-<<<<<<< HEAD
             return TextOrMarkdown(text_output, markdown_output)
-    # エラー説明用テンプレート（コード／トレースバックを差し込む）
-    error_help_prompt = traitlets.Unicode(
-        default_value=(
-            "あなたは Jupyter セルのエラーを解説し、修正方針を提案する AI アシスタントです。\n\n"
-            "次の情報を基に、原因の仮説と具体的な修正ステップを日本語で短く記述してください。\n"
-            "- セルソース:\n{code}\n\n"
-            "- エラートレースバック:\n{error}\n"
-        ),
-        help="""Template used when `--error-handle` is supplied.
-
-        The template should reference `{code}` and `{error}` placeholders, which will be replaced
-        with the executed cell contents and the formatted traceback respectively.""",
-        config=True,
-    )
-
-    # 外部ファイルからプロンプトを読む場合のパス（未設定ならリポジトリ直下 errorhandle_prompt.cfg を試す）
-    error_help_prompt_path = traitlets.Unicode(
-        default_value=None,
-        allow_none=True,
-        help="""Optional path to a file containing the error-help prompt template.
-        If set (or if a default file exists at workspace root), its contents will be used instead of `error_help_prompt`.
-        The template must include `{code}` and `{error}` placeholders.""",
-        config=True,
-    )
-=======
-            return TextOrMarkdown(text_output, markdown_output)
->>>>>>> 7584eef20b5312e3902057381474686ebf864f7b
