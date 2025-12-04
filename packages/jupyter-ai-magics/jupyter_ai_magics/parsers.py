@@ -55,7 +55,10 @@ class CellArgs(BaseModel):
     # Parameters for custom API endpoints
     api_base: Optional[str] = None
     api_key_name: Optional[str] = None
-
+    # # Test20251113 start
+    # nb_path: Optional[str] = None
+    # # Test20251113 end
+    option_file: Optional[str] = None
 
 # Should match CellArgs
 class FixArgs(BaseModel):
@@ -181,6 +184,21 @@ def verify_json_value(ctx, param, value):
     callback=verify_json_value,
     default="{}",
 )
+# # Test 20251113 Start
+# @click.option(
+#     "--nb-path",
+#     required=False,
+#     help="Path to a .ipynb file to include as context in the prompt.",
+# )
+# # Test 20251113 End
+
+@click.option(
+    "-o",
+    "--option-file",
+    required=False,
+    help="Path to a file to include as context in the prompt.",
+)
+
 @click.option(
     "--error-handle",
     "--errorhandle",
